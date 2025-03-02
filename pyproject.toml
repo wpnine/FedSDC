@@ -1,0 +1,125 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pytorchexample"
+version = "1.0.0"
+description = "Federated Learning with PyTorch and Flower (Quickstart Example)"
+license = "Apache-2.0"
+dependencies = [
+    "flwr[simulation]>=1.11.0",
+    "flwr-datasets[vision]>=0.3.0",
+    "torch==2.4.1",
+    "torchvision==0.19.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.flwr.app]
+publisher = "flwrlabs"
+
+[tool.flwr.app.components]
+serverapp = "server_app:app"
+clientapp = "client_app:app"
+
+[tool.flwr.app.config]
+# FedSDC | FedAvgM | FedProx
+method = "FedSDC"
+
+# Maximum number of communication rounds
+num_server_rounds = 1500
+
+# Total number of clients
+client_cnt = 15
+
+# Proportion of clients participating in evaluation per round
+fraction_evaluate = 1.0
+
+# Proportion of clients participating in training per round
+fraction_fit = 0.67
+
+# Server aggregation momentum, referring to FedAvgM
+server_momentum_beta = 0.5
+
+# Supports early stopping when the value is greater than 0
+server_early_stopping_step = 0
+
+# ResNet50 | ResNet18
+backbone = "ResNet50"
+
+# Minimum number of clients participating in training per round
+min_fit_clients = 3
+
+# Minimum number of available clients required per round
+min_available_clients = 5
+
+# Directory for saving training results
+save_dir = "./result/training_result"
+
+# Interval rounds for validation on the test set during training
+test_interval_rounds = 1
+
+# Initial model weights for training
+init_weights = ""
+
+# FedProx hyperparameter, see FedProx
+proximal_mu = 0.5
+
+# 0 | 1, if set to 1, the head network is randomly shuffled
+sdc_shuffle = 1
+
+# 0 | 1, if set to 1, supports diverse head
+sdc_diverse_head = 1
+
+# Minimum range for random compression ratio
+sdc_rho_start = 0.4
+
+# Maximum range for random compression ratio
+sdc_rho_end = 1.0
+
+# Dropout ratio for the head
+sdc_head_dropout = 0.2
+
+# Dataset allocation configuration
+#dataset = "../data/ham-noniid.txt"
+dataset = "../FedBase2/data/ham_noniid-2.txt"
+
+# Total number of classes
+class_num = 7
+
+# ham | blood - Determines data sampling method based on data type
+data_type = "ham"
+
+# Local epochs
+local_epoch = 5
+
+# Momentum for client-side SGD training
+local_momentum = 1e-2
+
+# Learning rate for client-side SGD training
+local_lr = 1e-3
+
+# Weight decay for client-side SGD training
+local_wd = 0.001
+
+# Batch size for client-side training
+local_batch_size = 64
+
+# 1 | 2 | 3, if set to 1, model training updates weights in one step;
+# if set to 2, the body is trained first, then the head;
+# if set to 3, the head is trained first, then the body
+local_train_mode = 1
+
+# Effective when local_train_mode == 2 or 3
+local_second_epoch = 0
+
+[tool.flwr.federations]
+default = "local-simulation"
+
+
+[tool.flwr.federations.local-sim-gpu]
+options.num-supernodes = 15
+options.backend.client-resources.num-cpus = 1
+options.backend.client-resources.num-gpus = 0.5
