@@ -83,8 +83,7 @@ sdc_rho_end = 1.0
 sdc_head_dropout = 0.2
 
 # Dataset allocation configuration
-#dataset = "../data/ham-noniid.txt"
-dataset = "../FedBase2/data/ham_noniid-2.txt"
+dataset = "../data/ham-noniid.txt"
 
 # Total number of classes
 class_num = 7
