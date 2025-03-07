@@ -34,7 +34,15 @@ def init_config(run_config):
             head_cnt = client_cnt
             if is_shuffle == 1:
                 head_cnt = int(client_cnt * fraction_fit)
-            head_compress_ratio = [random.uniform(rho_start,rho_end) for _ in range(head_cnt)]
+
+            rho_random_distance = (rho_end - rho_start) / head_cnt
+            head_compress_ratio = []
+            for i in range (head_cnt):
+                temp = rho_start + rho_random_distance
+                cr = random.uniform(rho_start, temp)
+                head_compress_ratio.append(cr)
+                rho_start = temp
+                
             final_config["sdc_head_compress_ratio"] = head_compress_ratio
             final_config["sdc_head_cnt"] = head_cnt
 
