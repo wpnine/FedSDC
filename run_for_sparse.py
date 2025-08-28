@@ -54,7 +54,7 @@ def evaluate_multi_cls(y_true, y_pred):
     return k, mcc, f1, bacc
 
 
-def calcResult(model,device,dataloader,classifiers):
+def calcResult(model,device,dataloader,classifiers,evaluate):
     allP, allT = [], []
 
     with torch.no_grad():
@@ -116,11 +116,11 @@ def calcResult(model,device,dataloader,classifiers):
         temp_all_t.append(int(allT[i]))
         temp_all_p.append(int(allP[i]))
 
+    if evaluate == "micro" or evaluate == "macro":
+        value = str(f1_score(allT, allP, average=evaluate))
+    return value
 
-    micro = str(f1_score(allT, allP, average='micro'))
-    return micro
-
-def calc_acc(config, is_show_all=False, choice_head_id=None):
+def calc_result(config, is_show_all=False, choice_head_id=None, is_train=True, evaluate="micro"):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     net = Classifer(config).to(device)
     root_path = config["save_dir"]
@@ -136,7 +136,10 @@ def calc_acc(config, is_show_all=False, choice_head_id=None):
     with open(data_path, 'r') as file:
         data = json.load(file)
         for key, value in enumerate(data):
-            val_list += value["test_set"]
+            if is_train:
+                val_list += value["train_set"]
+            else:
+                val_list += value["test_set"]
 
     head_cnt = config["sdc_head_cnt"]
     if data_type == "ham":
@@ -171,6 +174,7 @@ def calc_acc(config, is_show_all=False, choice_head_id=None):
             device=device,
             dataloader=dataloader,
             classifiers=final_choice_head,
+            evaluate=evaluate,
         )
         print(f"\n{client_name} ====> {t1}\n")
         return t1
@@ -183,6 +187,7 @@ def calc_acc(config, is_show_all=False, choice_head_id=None):
                 device=device,
                 dataloader=dataloader,
                 classifiers=c,
+                evaluate=evaluate,
             )
             print(f"\n{client_name} ====> {t1}\n")
             all_acc.append((i,t1))
@@ -191,7 +196,7 @@ def calc_acc(config, is_show_all=False, choice_head_id=None):
 
 
 if __name__ == "__main__":
-    save_path = f"./result/testing/"
+    save_path = f"./result/training_result8/"
     config_path = os.path.join(save_path,"config.txt")
     with open(config_path, 'r') as file:
         config = json.load(file)
@@ -202,11 +207,13 @@ if __name__ == "__main__":
     target = None
 
 
-    all_model_microf1 = calc_acc(config, False, choice_head_id=None)
-    sorted_data = sorted(all_model_microf1, key=lambda x: x[1], reverse=True)
+    ensemble = calc_result(config, True, choice_head_id=None, is_train=False, evaluate="micro")
+
+    all_model = calc_result(config, False, choice_head_id=None,is_train=True, evaluate="macro")
+    sorted_data = sorted(all_model, key=lambda x: x[1], reverse=True)
 
     spare_heads = [sorted_data[i][0] for i in range(spare_cnt)]
     print("spare head ids", spare_heads)
-    t2 = calc_acc(config, True,choice_head_id=spare_heads)
+    t2 = calc_result(config, True, choice_head_id=spare_heads,is_train=False,evaluate="micro")
 
 
