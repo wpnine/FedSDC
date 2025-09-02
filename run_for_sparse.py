@@ -44,14 +44,6 @@ def print_row(row, colwidth=10, latex=False):
 
 
 
-def evaluate_multi_cls(y_true, y_pred):
-    # preds
-    f1 = f1_score(y_true, y_pred, average='macro')
-    mcc = matthews_corrcoef(y_true, y_pred)
-    k = kappa(y_true, y_pred, weights='quadratic')
-    bacc = bal_acc(y_true, y_pred)
-    present_classes, _ = np.unique(y_true, return_counts=True)
-    return k, mcc, f1, bacc
 
 
 def calcResult(model,device,dataloader,classifiers,evaluate):
@@ -117,7 +109,14 @@ def calcResult(model,device,dataloader,classifiers,evaluate):
         temp_all_p.append(int(allP[i]))
 
     if evaluate == "micro" or evaluate == "macro":
-        value = str(f1_score(allT, allP, average=evaluate))
+        value = f1_score(allT, allP, average=evaluate)
+    elif evaluate == "bacc":
+        value = bal_acc(allT, allP)
+    elif evaluate == "kappa":
+        value = kappa(allT, allP, weights='quadratic')
+    elif evaluate == "mcc":
+        value = matthews_corrcoef(allT, allP)
+
     return value
 
 def calc_result(config, is_show_all=False, choice_head_id=None, is_train=True, evaluate="micro"):
@@ -160,7 +159,7 @@ def calc_result(config, is_show_all=False, choice_head_id=None, is_train=True, e
 
 
     if is_show_all:
-        client_name = "spare heads ensemble"
+        client_name = "ensemble"
         if choice_head_id is not None:
             final_choice_head = []
             for i, v in enumerate(net.choice_heads):
@@ -189,7 +188,7 @@ def calc_result(config, is_show_all=False, choice_head_id=None, is_train=True, e
                 classifiers=c,
                 evaluate=evaluate,
             )
-            print(f"\n{client_name} ====> {t1}\n")
+            print(f"\n{evaluate}:{client_name} ====> {t1}\n")
             all_acc.append((i,t1))
 
     return all_acc
@@ -207,9 +206,9 @@ if __name__ == "__main__":
     target = None
 
 
-    ensemble = calc_result(config, True, choice_head_id=None, is_train=False, evaluate="micro")
+    all_ensemble = calc_result(config, True, choice_head_id=None, is_train=False, evaluate="micro")
 
-    all_model = calc_result(config, False, choice_head_id=None,is_train=True, evaluate="macro")
+    all_model = calc_result(config, False, choice_head_id=None,is_train=True, evaluate="bacc")
     sorted_data = sorted(all_model, key=lambda x: x[1], reverse=True)
 
     spare_heads = [sorted_data[i][0] for i in range(spare_cnt)]
